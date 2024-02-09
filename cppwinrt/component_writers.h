@@ -235,14 +235,13 @@ catch (...) { return winrt::to_hresult(); }
             return;
         }
 
-        if (settings.component_filter.includes(base_type))
+        bool const external_base_type = !settings.component_filter.includes(base_type);
+        if (external_base_type)
         {
-            return;
+            w.write(", composing");
         }
 
-        w.write(", composing");
-
-        for (auto&&[interface_name, info] : get_interfaces(w, base_type))
+        for (auto&& [interface_name, info] : get_interfaces(w, base_type))
         {
             if (info.overridable && !is_always_disabled(info.type))
             {
