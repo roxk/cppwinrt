@@ -2206,7 +2206,7 @@ struct WINRT_IMPL_EMPTY_BASES produce_dispatch_to_overridable<T, D, %>
 
     static void write_interface_override(writer& w, TypeDef const& type)
     {
-        auto format = R"(    template <typename D>
+        auto format = R"(    template <typename D, typename B = void>
     class %T
     {
         D& shim() noexcept { return *static_cast<D*>(this); }
