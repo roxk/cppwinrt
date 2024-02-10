@@ -1980,9 +1980,16 @@ struct WINRT_IMPL_EMPTY_BASES produce_dispatch_to_overridable<T, D, %>
 
     static void write_interface_override_method(writer& w, MethodDef const& method, std::string_view const& interface_name)
     {
-        auto format = R"(    template <typename D> auto %T<D>::%(%) const%
+        auto format = R"(    template <typename D, typename B> auto %T<D, B>::%(%) const%
     {
-        return shim().template try_as<%>().%(%);
+        if constexpr (std::is_same_v<B, void>)
+        {
+            return shim().template try_as<%>().%(%);
+        }
+        else
+        {
+            return shim().B::%(%);
+        }
     }
 )";
 
@@ -1995,6 +2002,8 @@ struct WINRT_IMPL_EMPTY_BASES produce_dispatch_to_overridable<T, D, %>
             bind<write_consume_params>(signature),
             is_noexcept(method) ? " noexcept" : "",
             interface_name,
+            method_name,
+            bind<write_consume_args>(signature),
             method_name,
             bind<write_consume_args>(signature));
     }
