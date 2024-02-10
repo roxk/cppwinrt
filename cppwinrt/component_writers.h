@@ -43,6 +43,51 @@ namespace cppwinrt
         }
     }
 
+    static void write_component_using_override_defaults(writer& w, TypeDef const& type, std::string_view base_type_argument)
+    {
+        auto base_type = get_base_class(type);
+        if (!base_type)
+        {
+            return;
+        }
+        bool const external_base_type = !settings.component_filter.includes(base_type);
+        if (external_base_type)
+        {
+            return;
+        }
+        std::vector<cppwinrt::interface_info> interfaces;
+        for (auto&& base : get_bases(type))
+        {
+            if (settings.component_filter.includes(base))
+            {
+                continue;
+            }
+
+            for (auto&& [name, info] : get_interfaces(w, base))
+            {
+                if (info.base)
+                {
+                    continue;
+                }
+
+                if (info.overridable && !is_always_disabled(info.type))
+                {
+                    interfaces.push_back(info);
+                }
+            }
+        }
+
+        for (auto&& info : interfaces)
+        {
+            auto base_interface_name = info.type.TypeName();
+            for (auto&& method : info.type.MethodList())
+            {
+                auto method_name = method.Name();
+                w.write("\n        using %T<D%>::%;", base_interface_name, base_type_argument, method_name);
+            }
+        }
+    }
+
     static void write_component_class_base(writer& w, TypeDef const& type)
     {
         bool first = true;
@@ -748,7 +793,7 @@ catch (...) { return winrt::to_hresult(); }
         using class_type = @::%;
         using implements_type = typename %_base::implements_type;
         using implements_type::implements_type;
-        %%
+        %%%
         hstring GetRuntimeClassName() const
         {
             return L"%.%";
@@ -831,6 +876,7 @@ catch (...) { return winrt::to_hresult(); }
                     base_type_parameter = ", typename B";
                     base_type_argument = ", B";
                     no_module_lock = "no_module_lock, ";
+                    
                 }
             }
 
@@ -852,6 +898,7 @@ catch (...) { return winrt::to_hresult(); }
                 type_name,
                 type_name,
                 composable_base_name,
+                bind<write_component_using_override_defaults>(type, base_type_argument),
                 friends,
                 type_namespace,
                 type_name,
