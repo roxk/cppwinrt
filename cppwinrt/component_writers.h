@@ -2,7 +2,7 @@
 
 namespace cppwinrt
 {
-    static void write_component_override_defaults(writer& w, TypeDef const& type)
+    static void write_component_override_defaults(writer& w, TypeDef const& type, std::string_view base_type_argument)
     {
         std::vector<std::string> interfaces;
 
@@ -34,11 +34,11 @@ namespace cppwinrt
             if (first)
             {
                 first = false;
-                w.write(",\n        %T<D>", name);
+                w.write(",\n        %T<D%>", name, base_type_argument);
             }
             else
             {
-                w.write(", %T<D>", name);
+                w.write(", %T<D%>", name, base_type_argument);
             }
         }
     }
@@ -892,7 +892,7 @@ catch (...) { return winrt::to_hresult(); }
                 external_requires,
                 external_protected_requires,
                 bind<write_component_class_base>(type),
-                bind<write_component_override_defaults>(type),
+                bind<write_component_override_defaults>(type, base_type_argument),
                 type_name,
                 type_namespace,
                 type_name,
